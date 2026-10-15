@@ -22,3 +22,16 @@ export const leadMutationRateLimiter = rateLimit({
     message: 'Too many modifications from this IP, please wait a minute.'
   }
 });
+
+// Brute-force protection for authentication endpoints
+export const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // Limit each IP to 50 login/signup attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    detail: 'Too many authentication attempts from this IP. Please try again after 15 minutes.'
+  }
+});
+

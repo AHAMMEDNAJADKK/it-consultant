@@ -5,6 +5,7 @@ import { departmentController } from '../modules/departments/department.controll
 import verifyJWT from '../middleware/auth.middleware.js';
 import User from '../models/user.model.js';
 import { AppError } from '../middleware/errorHandler.js';
+import { authRateLimiter } from '../middleware/rateLimiter.middleware.js';
 import {
   userIdParamsSchema,
   userStatusBodySchema,
@@ -14,8 +15,8 @@ import {
 
 const router = Router();
 
-router.post('/signup', signup);
-router.post('/login', login);
+router.post('/signup', authRateLimiter, signup);
+router.post('/login', authRateLimiter, login);
 router.post('/google', googleLogin);
 router.post('/forgot-password/verify', verifyForgotPassword);
 router.post('/forgot-password/reset', resetForgotPassword);
@@ -29,8 +30,9 @@ router.put(
   validateBody(userStatusBodySchema),
   async (req, res, next) => {
     try {
-      const role = req.user.role || req.user.role_id;
-      if (role !== 'admin') {
+      const role = String(req.user.role || req.user.role_id || '').toLowerCase();
+      const isSuperAdmin = req.user.isSuperAdmin || role === 'superadmin' || role === '0';
+      if (!isSuperAdmin && role !== 'admin' && role !== '1' && role !== '2') {
         throw new AppError('Access denied. Admin access only.', 403);
       }
 

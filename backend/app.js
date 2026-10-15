@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dns from 'dns';
@@ -73,12 +75,15 @@ app.use(cors({
 
 app.options('*', cors());
 
-// 2. Parsers Middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// 2. Security Headers & Performance Middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(compression());
 
+// 3. Parsers Middleware
 app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

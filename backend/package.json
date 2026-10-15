@@ -14,7 +14,8 @@
     "prisma:seed": "node prisma/seeds/seed.js",
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js src/tests/lead.test.js",
     "test:erp": "node src/tests/erp_suite.test.js",
-    "test:client": "node src/tests/client.test.js"
+    "test:client": "node src/tests/client.test.js",
+    "test:security": "node src/tests/security_and_edge_cases.test.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

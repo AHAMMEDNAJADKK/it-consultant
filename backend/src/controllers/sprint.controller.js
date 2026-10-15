@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Sprint from '../models/sprint.model.js';
 import Task from '../models/task.model.js';
 import Project from '../models/project.model.js';
@@ -55,6 +56,9 @@ export const getSprints = async (req, res, next) => {
  */
 export const getSprintById = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid sprint ID format' });
+    }
     const sprint = await Sprint.findById(req.params.id)
       .populate('project', 'projectName projectCode technologyStack projectManager')
       .populate('createdBy', 'name email');
@@ -151,6 +155,9 @@ export const createSprint = async (req, res, next) => {
  */
 export const updateSprint = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid sprint ID format' });
+    }
     const { name, goal, startDate, endDate, status, retrospectiveNotes } = req.body;
     const sprint = await Sprint.findById(req.params.id);
     if (!sprint) {
@@ -183,6 +190,9 @@ export const updateSprint = async (req, res, next) => {
  */
 export const deleteSprint = async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid sprint ID format' });
+    }
     const sprint = await Sprint.findById(req.params.id);
     if (!sprint) {
       return res.status(404).json({ success: false, message: 'Sprint not found' });
@@ -209,6 +219,9 @@ export const deleteSprint = async (req, res, next) => {
 export const updateTaskSprintStatus = async (req, res, next) => {
   try {
     const { taskId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(taskId)) {
+      return res.status(400).json({ success: false, message: 'Invalid taskId format' });
+    }
     const { sprintStatus, storyPoints } = req.body;
 
     const normalizedStatusMap = {

@@ -18,6 +18,23 @@ export const getERPDashboardMetrics = async (req, res, next) => {
   try {
     const now = new Date();
     const twoWeeksAhead = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    const user = req.user || {};
+    const roleStr = String(user.role || user.role_id || '').toLowerCase().trim();
+    const isSuperAdminOrAdmin = user.isSuperAdmin === true || ['0', '1', '2', 'admin', 'hr', 'superadmin', 'md', 'coo'].includes(roleStr);
+    const isClient = roleStr === 'client' || !!user.clientId || !!user.client;
+    const clientId = user.clientId || user.client || null;
+    const isDeveloper = !isSuperAdminOrAdmin && !isClient;
+    const currentUserId = user.id || user._id;
+
+    // Scoped filters
+    const projectFilter = {};
+    const taskFilter = {};
+    if (isClient && clientId) {
+      projectFilter.client = clientId;
+    }
+    if (isDeveloper && currentUserId) {
+      taskFilter.assigned_to = currentUserId;
+    }
 
     // 1. Projects Metrics
     const [
@@ -27,16 +44,16 @@ export const getERPDashboardMetrics = async (req, res, next) => {
       recentProjects,
       allProjects
     ] = await Promise.all([
-      Project.countDocuments(),
-      Project.countDocuments({ status: { $in: ['In Progress', 'Development', 'Testing', 'Planning', 'Changes'] } }),
-      Project.countDocuments({ status: 'Completed' }),
-      Project.find()
+      Project.countDocuments(projectFilter),
+      Project.countDocuments({ ...projectFilter, status: { $in: ['In Progress', 'Development', 'Testing', 'Planning', 'Changes'] } }),
+      Project.countDocuments({ ...projectFilter, status: 'Completed' }),
+      Project.find(projectFilter)
         .populate('client', 'companyName clientName')
         .populate('projectManager', 'name email avatar')
         .sort({ updatedAt: -1 })
         .limit(6)
         .lean(),
-      Project.find({ status: { $ne: 'Completed' } }).select('deadline progress projectName projectCode').lean()
+      Project.find({ ...projectFilter, status: { $ne: 'Completed' } }).select('deadline progress projectName projectCode').lean()
     ]);
 
     const overdueProjects = allProjects.filter(p => p.deadline && new Date(p.deadline) < now);
@@ -53,12 +70,12 @@ export const getERPDashboardMetrics = async (req, res, next) => {
       blockedTasks,
       allActiveTasks
     ] = await Promise.all([
-      Task.countDocuments(),
-      Task.countDocuments({ status: 'pending' }),
-      Task.countDocuments({ status: { $in: ['in-progress', 'in_progress', 'current'] } }),
-      Task.countDocuments({ status: { $in: ['completed', 'done'] } }),
-      Task.countDocuments({ sprintStatus: 'Backlog', status: 'pending' }),
-      Task.find({ status: { $nin: ['completed', 'done', 'cancelled'] } }).select('dueDate priority title assigned_to project').lean()
+      Task.countDocuments(taskFilter),
+      Task.countDocuments({ ...taskFilter, status: 'pending' }),
+      Task.countDocuments({ ...taskFilter, status: { $in: ['in-progress', 'in_progress', 'current'] } }),
+      Task.countDocuments({ ...taskFilter, status: { $in: ['completed', 'done'] } }),
+      Task.countDocuments({ ...taskFilter, sprintStatus: 'Backlog', status: 'pending' }),
+      Task.find({ ...taskFilter, status: { $nin: ['completed', 'done', 'cancelled'] } }).select('dueDate priority title assigned_to project').lean()
     ]);
 
     const overdueTasks = allActiveTasks.filter(t => t.dueDate && new Date(t.dueDate) < now);
@@ -146,7 +163,7 @@ export const getERPDashboardMetrics = async (req, res, next) => {
     ] = await Promise.all([
       ClientLead.countDocuments({ isArchived: { $ne: true } }),
       ClientLead.countDocuments({ status: 'New', isArchived: { $ne: true } }),
-      ClientLead.countDocuments({ status: { $in: ['Interested', 'Follow Up', 'Contacted'] }, isArchived: { $ne: true } }),
+      ClientLead.countDocuments({ status: { $in: ['Qualified', 'Proposal', 'Won', 'Interested', 'Follow Up', 'Contacted'] }, isArchived: { $ne: true } }),
       ClientLead.countDocuments({ status: 'Converted' }),
       ClientLead.find({ isArchived: { $ne: true } })
         .sort({ createdAt: -1 })

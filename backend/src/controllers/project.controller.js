@@ -7,6 +7,9 @@ import ProjectActivity from '../models/projectActivity.model.js';
 import ProjectMilestone from '../models/projectMilestone.model.js';
 import ProjectComment from '../models/projectComment.model.js';
 import ProjectDocument from '../models/projectDocument.model.js';
+import Sprint from '../models/sprint.model.js';
+import GitEvent from '../models/gitEvent.model.js';
+import SupportTicket from '../models/supportTicket.model.js';
 import User from '../models/user.model.js';
 import { validationResult } from 'express-validator';
 import { generateProjectCode, notifyProjectEvent } from '../services/project.service.js';
@@ -156,13 +159,22 @@ export const getProjectById = async (req, res) => {
       }
     }
 
+    const [sprints, gitEvents, supportTickets] = await Promise.all([
+      Sprint.find({ project: id }).sort({ createdAt: -1 }).lean(),
+      GitEvent.find({ project: id }).sort({ createdAt: -1 }).limit(10).lean(),
+      SupportTicket.find({ project: id }).sort({ createdAt: -1 }).limit(10).lean()
+    ]);
+
     return sendSuccess(res, 'Project details retrieved successfully', {
       project,
       milestones,
       activities,
       comments,
       documents,
-      tasks
+      tasks,
+      sprints,
+      gitEvents,
+      supportTickets
     });
   } catch (error) {
     console.error('getProjectById Error:', error);

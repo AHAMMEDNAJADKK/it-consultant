@@ -159,6 +159,31 @@ export const createClientLead = async (req, res, next) => {
       leadSource = 'MARKETING';
     }
 
+    // Prevent duplicate lead submissions for identical email or phone within active pipeline
+    if (req.body.email || req.body.phone) {
+      const orClauses = [];
+      if (req.body.email && typeof req.body.email === 'string' && req.body.email.trim()) {
+        orClauses.push({ email: req.body.email.toLowerCase().trim() });
+      }
+      if (req.body.phone && typeof req.body.phone === 'string' && req.body.phone.trim()) {
+        orClauses.push({ phone: req.body.phone.trim() });
+      }
+      if (orClauses.length > 0) {
+        const existingLead = await ClientLead.findOne({
+          $or: orClauses,
+          isArchived: { $ne: true },
+          status: { $ne: 'Converted' }
+        });
+        if (existingLead) {
+          return res.status(409).json({
+            success: false,
+            message: `A lead with this contact information already exists: ${existingLead.leadName} (${existingLead.status}).`,
+            data: existingLead
+          });
+        }
+      }
+    }
+
     const newLead = new ClientLead({
       ...req.body,
       source: leadSource,

@@ -150,50 +150,66 @@ export const login = async (req, res) => {
     const cleanEmail = String(email).toLowerCase().trim();
     const cleanPassword = String(password);
 
-    // 1. Find user by email (case-insensitive & trimmed)
-    const user = await User.findOne({ email: cleanEmail });
+    // 1. Find user by email (case-insensitive & trimmed, with regex fallback)
+    const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const user = await User.findOne({
+      $or: [
+        { email: cleanEmail },
+        { email: { $regex: new RegExp(`^\\s*${escapedEmail}\\s*$`, 'i') } }
+      ]
+    });
+
     if (!user) {
+      console.warn(`[AUTH] Login failed: User account not found for email "${cleanEmail}"`);
       return res.status(401).json({ detail: "Invalid credentials provided." });
     }
 
     // 2. Check account active status
     if (user.status === 'blocked' || user.status === 'inactive' || user.isActive === false) {
+      console.warn(`[AUTH] Login rejected: Account inactive or blocked for user "${cleanEmail}"`);
       return res.status(403).json({ detail: "Account is inactive or suspended. Please contact your administrator." });
     }
 
-    // 3. Verify password (bcrypt + plain text fallback with auto-upgrade)
-    const storedPassword = user.password || user.passwordHash;
-    if (!storedPassword) {
+    // 3. Verify password across stored candidate fields (bcrypt + plain text fallback with auto-upgrade)
+    const candidateHashes = [user.password, user.passwordHash].filter(p => typeof p === 'string' && p.trim().length > 0);
+    if (candidateHashes.length === 0) {
+      console.warn(`[AUTH] Login failed: No stored password hash found for user "${cleanEmail}"`);
       return res.status(401).json({ detail: "Invalid credentials provided." });
     }
 
     let validPassword = false;
-    const isBcrypt = storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$') || storedPassword.startsWith('$2y$');
+    for (const stored of candidateHashes) {
+      const isBcrypt = stored.startsWith('$2a$') || stored.startsWith('$2b$') || stored.startsWith('$2y$');
 
-    if (isBcrypt) {
-      try {
-        validPassword = await bcrypt.compare(cleanPassword, storedPassword);
-      } catch (bcryptErr) {
-        console.error("Bcrypt comparison error:", bcryptErr.message);
-        validPassword = false;
-      }
-    } else {
-      // Plain-text check for initial temporary passwords or unhashed seeds
-      if (cleanPassword === storedPassword) {
-        validPassword = true;
+      if (isBcrypt) {
         try {
-          const hashedPassword = await bcrypt.hash(cleanPassword, 10);
-          user.password = hashedPassword;
-          user.passwordHash = hashedPassword;
-          await user.save();
-          console.log(`🔐 Auto-upgraded plain password to bcrypt hash for user: ${user.email}`);
-        } catch (upgradeErr) {
-          console.error("Failed to upgrade password hash:", upgradeErr.message);
+          if (await bcrypt.compare(cleanPassword, stored)) {
+            validPassword = true;
+            break;
+          }
+        } catch (bcryptErr) {
+          console.error("[AUTH] Bcrypt comparison error:", bcryptErr.message);
+        }
+      } else {
+        // Plain-text check for initial temporary passwords or unhashed seeds
+        if (cleanPassword === stored) {
+          validPassword = true;
+          try {
+            const hashedPassword = await bcrypt.hash(cleanPassword, 10);
+            user.password = hashedPassword;
+            user.passwordHash = hashedPassword;
+            await user.save();
+            console.log(`🔐 Auto-upgraded plain password to bcrypt hash for user: ${user.email}`);
+          } catch (upgradeErr) {
+            console.error("[AUTH] Failed to upgrade password hash:", upgradeErr.message);
+          }
+          break;
         }
       }
     }
 
     if (!validPassword) {
+      console.warn(`[AUTH] Login failed: Invalid password supplied for user "${cleanEmail}"`);
       return res.status(401).json({ detail: "Invalid credentials provided." });
     }
 

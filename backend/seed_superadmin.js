@@ -21,12 +21,16 @@ const maskMongoUri = (uri) => {
   }
 };
 
-// Parse command line arguments (e.g. --password=secret --force-reset)
+// Parse command line arguments (e.g. --password=secret --force-reset --db-name=crm --db-uri=...)
 const parseArgs = () => {
   const args = {};
   process.argv.slice(2).forEach(arg => {
     if (arg.startsWith('--password=')) {
       args.password = arg.split('=')[1];
+    } else if (arg.startsWith('--db-uri=')) {
+      args.dbUri = arg.split('=')[1];
+    } else if (arg.startsWith('--db-name=')) {
+      args.dbName = arg.split('=')[1];
     } else if (arg === '--force-reset') {
       args.forceReset = true;
     }
@@ -42,7 +46,7 @@ async function provisionSuperAdmin() {
   if (!rawPassword || typeof rawPassword !== 'string' || !rawPassword.trim()) {
     console.error('\n❌ ERROR: Initial Super Admin password is required.');
     console.error('   Please provide it securely via environment variable or CLI argument:');
-    console.error('   Usage: INITIAL_SUPERADMIN_PASSWORD="<secret>" node seed_superadmin.js');
+    console.error('   Usage: INITIAL_SUPERADMIN_PASSWORD="<secret>" node seed_superadmin.js [--force-reset]');
     console.error('   Or:    node seed_superadmin.js --password="<secret>" [--force-reset]\n');
     process.exit(1);
   }
@@ -53,19 +57,16 @@ async function provisionSuperAdmin() {
     process.exit(1);
   }
 
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
-  if (!mongoUri) {
-    console.error('\n❌ ERROR: No MongoDB Atlas connection URI defined in environment (MONGODB_URI).\n');
-    process.exit(1);
-  }
+  const mongoUri = args.dbUri || process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/student_attendance_db';
+  const targetDbName = args.dbName || process.env.MONGODB_DB_NAME || 'crm';
 
   try {
-    console.log(`🔌 Connecting to database: ${maskMongoUri(mongoUri)}...`);
+    console.log(`🔌 Connecting to database: ${maskMongoUri(mongoUri)} [database: ${targetDbName}]...`);
     await mongoose.connect(mongoUri.trim().replace(/^["']|["']$/g, ''), {
-      dbName: process.env.MONGODB_DB_NAME || 'crm',
+      dbName: targetDbName,
       serverSelectionTimeoutMS: 10000
     });
-    console.log('✅ Connected to MongoDB Atlas successfully.');
+    console.log('✅ Connected to MongoDB successfully.');
 
     const targetEmail = 'superadmin@gmail.com';
     let existingUser = await User.findOne({ email: targetEmail });

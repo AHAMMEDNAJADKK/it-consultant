@@ -1,4 +1,14 @@
 {
+  "name": "it-consultant",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix \"front crm\" run build",
+    "install:front": "npm --prefix \"front crm\" install",
+    "install:backend": "npm --prefix backend install",
+    "dev": "npm --prefix \"front crm\" run dev",
+    "start": "npm --prefix backend start"
+  },
   "dependencies": {
     "cors": "^2.8.6"
   }

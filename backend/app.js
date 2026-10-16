@@ -149,7 +149,7 @@ app.get('/api/health', healthCheckHandler);
 app.get('/health', healthCheckHandler);
 
 // Database readiness guard: do not accept normal API traffic if database is required but unavailable
-app.use(['/api', '/v1'], (req, res, next) => {
+app.use(['/api', '/v1', '/auth'], (req, res, next) => {
   if (req.path === '/health' || req.path === '/health/' || req.path === '/' || req.path.startsWith('/public/')) {
     return next();
   }
@@ -165,6 +165,7 @@ app.use(['/api', '/v1'], (req, res, next) => {
 
 // 4. Specific/Dedicated API Routers
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/auth', authRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/attendance', attendanceRoutes); 

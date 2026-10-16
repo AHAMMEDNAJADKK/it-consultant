@@ -56,17 +56,42 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // 1. CORS Configuration
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['https://crm-test.vercel.app', 'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'];
+const defaultOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:3000'
+];
+
+const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
-      callback(null, true);
-    } else {
-      callback(null, true);
+    // Allow requests with no origin (like mobile apps, curl, server-to-server, Render health checks)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+      return callback(null, true);
     }
+
+    // Automatically allow Vercel production and preview deployment URLs
+    if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    // Automatically allow Render internal/app domains
+    if (/^https:\/\/[a-zA-Z0-9_-]+\.onrender\.com$/.test(origin)) {
+      return callback(null, true);
+    }
+
+    const corsError = new Error(`CORS blocked for unauthorized origin: ${origin}`);
+    corsError.status = 403;
+    return callback(corsError, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -95,6 +120,48 @@ app.get('/api/public/pdf/:token/raw', servePublicPdf);
 app.get('/api/public/pdf/:token', servePublicPdf);
 app.get('/public/pdf/:token/raw', servePublicPdf);
 app.get('/public/pdf/:token', servePublicPdf);
+
+// Health Check Endpoints (Reports service status and DB readiness without leaking secrets)
+const healthCheckHandler = (req, res) => {
+  const isDbReady = mongoose.connection.readyState === 1;
+  const dbStates = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  const stateStr = dbStates[mongoose.connection.readyState] || 'unknown';
+
+  return res.status(isDbReady ? 200 : 503).json({
+    status: isDbReady ? 'healthy' : 'degraded',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    service: 'Nexora IT Suite API',
+    database: {
+      status: stateStr,
+      readyState: mongoose.connection.readyState
+    },
+    environment: process.env.NODE_ENV || 'development'
+  });
+};
+
+app.get('/api/health', healthCheckHandler);
+app.get('/health', healthCheckHandler);
+
+// Database readiness guard: do not accept normal API traffic if database is required but unavailable
+app.use(['/api', '/v1'], (req, res, next) => {
+  if (req.path === '/health' || req.path === '/health/' || req.path === '/' || req.path.startsWith('/public/')) {
+    return next();
+  }
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database service is currently unavailable. Please try again shortly.',
+      code: 'DATABASE_UNAVAILABLE'
+    });
+  }
+  next();
+});
 
 // 4. Specific/Dedicated API Routers
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -187,56 +254,88 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 7. Database Connection Section
-const MONGO_URI = process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb+srv://shabeeba:9995982324@cluster0.i23tzbf.mongodb.net/crm?appName=Cluster0';
+// 7. Database Connection Section (Secure MongoDB Atlas Configuration)
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
 
-mongoose.connect(MONGO_URI)
-  .then(async () => {
-    console.log(' ✅ Successfully connected to MongoDB.');
-    try {
-      const count = await Designation.countDocuments();
-      if (count === 0) {
-        const defaultDesignations = [
-          "HR Manager",
-          "Graphic Designer",
-          "Digital Marketer",
-          "React Developer",
-          "Node Developer",
-          "Flutter Developer",
-          "Fullstack",
-          "Admin",
-          "Manager"
-        ];
-        await Designation.insertMany(defaultDesignations.map(name => ({ name, isActive: true })));
-        console.log(' 🌱 Successfully seeded default designations.');
-      }
-    } catch (seedErr) {
-      console.error(' ❌ Failed to seed default designations:', seedErr.message);
-    }
+const maskMongoUri = (uri) => {
+  if (!uri) return '<none>';
+  try {
+    const parsed = new URL(uri);
+    return `${parsed.protocol}//***:***@${parsed.host}${parsed.pathname}`;
+  } catch (_) {
+    return uri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@');
+  }
+};
 
-    try {
-      const deptCount = await Department.countDocuments();
-      if (deptCount === 0) {
-        const defaultDepartments = [
-          { name: "HR & Admin", code: "HR" },
-          { name: "Marketing", code: "MKT" },
-          { name: "Development", code: "DEV" },
-          { name: "Designing", code: "DSN" }
-        ];
-        await Department.insertMany(defaultDepartments.map(d => ({ 
-          name: d.name, 
-          code: d.code, 
-          status: true 
-        })));
-        console.log(' 🌱 Successfully seeded default departments.');
-      }
-    } catch (seedErr) {
-      console.error(' ❌ Failed to seed default departments:', seedErr.message);
-    }
+if (!MONGO_URI) {
+  console.error('❌ CRITICAL CONFIGURATION ERROR: No MongoDB Atlas connection URI provided.');
+  console.error('   Please define MONGODB_URI (or MONGO_URI / DATABASE_URL) in your environment variables.');
+} else {
+  console.log(`🔌 Connecting to MongoDB Atlas: ${maskMongoUri(MONGO_URI)}`);
+
+  mongoose.connect(MONGO_URI, {
+    dbName: process.env.MONGODB_DB_NAME || 'crm',
+    serverSelectionTimeoutMS: 10000,
+    maxPoolSize: 10
   })
-  .catch((error) => {
-    console.error(' ❌ CRITICAL DATABASE CONNECTION ERROR:', error.message);
-    process.exit(1); 
-  });
+    .then(async () => {
+      const host = mongoose.connection.host || 'MongoDB Atlas';
+      const dbName = mongoose.connection.name || 'crm';
+      console.log(` ✅ Successfully connected to MongoDB Atlas [database: ${dbName}, host: ${host}].`);
+
+      try {
+        const count = await Designation.countDocuments();
+        if (count === 0) {
+          const defaultDesignations = [
+            "HR Manager",
+            "Graphic Designer",
+            "Digital Marketer",
+            "React Developer",
+            "Node Developer",
+            "Flutter Developer",
+            "Fullstack",
+            "Admin",
+            "Manager"
+          ];
+          await Designation.insertMany(defaultDesignations.map(name => ({ name, isActive: true })));
+          console.log(' 🌱 Successfully seeded default designations.');
+        }
+      } catch (seedErr) {
+        console.error(' ❌ Failed to seed default designations:', seedErr.message);
+      }
+
+      try {
+        const deptCount = await Department.countDocuments();
+        if (deptCount === 0) {
+          const defaultDepartments = [
+            { name: "HR & Admin", code: "HR" },
+            { name: "Marketing", code: "MKT" },
+            { name: "Development", code: "DEV" },
+            { name: "Designing", code: "DSN" }
+          ];
+          await Department.insertMany(defaultDepartments.map(d => ({ 
+            name: d.name, 
+            code: d.code, 
+            status: true 
+          })));
+          console.log(' 🌱 Successfully seeded default departments.');
+        }
+      } catch (seedErr) {
+        console.error(' ❌ Failed to seed default departments:', seedErr.message);
+      }
+    })
+    .catch((error) => {
+      console.error(' ❌ CRITICAL DATABASE CONNECTION ERROR:', error.message);
+      console.error('    API endpoints requiring database operations will respond with 503 Service Unavailable.');
+    });
+}
+
+mongoose.connection.on('disconnected', () => {
+  console.warn('⚠️ MongoDB Atlas connection lost. Service is degraded.');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('🔄 MongoDB Atlas reconnected successfully.');
+});
 
 export default app;

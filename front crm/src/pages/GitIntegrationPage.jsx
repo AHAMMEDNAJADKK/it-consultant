@@ -117,9 +117,11 @@ export default function GitIntegrationPage() {
     toast.showSuccess('Copied to clipboard');
   };
 
-  const webhookBaseUrl = window.location.origin.includes('localhost')
-    ? 'http://localhost:5000/api/v1/git/webhook/github'
-    : `${window.location.origin}/api/v1/git/webhook/github`;
+  const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
+  const rootBackend = apiBase.startsWith('http')
+    ? apiBase.replace(/\/v1\/?$/, '').replace(/\/api\/?$/, '')
+    : (window.location.origin.includes('localhost') ? 'http://localhost:5000' : window.location.origin);
+  const webhookBaseUrl = `${rootBackend}/api/v1/git/webhook/github`;
 
   return (
     <div className="space-y-6">

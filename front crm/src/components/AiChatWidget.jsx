@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, Loader2, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
-const API_URL = import.meta.env?.VITE_API_URL || import.meta.env?.REACT_APP_API_URL || 'http://localhost:5000/api/v1';
+const API_URL = (import.meta.env?.VITE_API_URL || import.meta.env?.REACT_APP_API_URL || '/api').replace(/\/v1\/?$/, '').replace(/\/+$/, '');
 
 const AiChatWidget = ({ reportContext }) => {
   const [isOpen, setIsOpen] = useState(false);

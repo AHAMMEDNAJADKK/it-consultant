@@ -26,11 +26,11 @@ const parseArgs = () => {
   const args = {};
   process.argv.slice(2).forEach(arg => {
     if (arg.startsWith('--password=')) {
-      args.password = arg.split('=')[1];
+      args.password = arg.substring('--password='.length);
     } else if (arg.startsWith('--db-uri=')) {
-      args.dbUri = arg.split('=')[1];
+      args.dbUri = arg.substring('--db-uri='.length);
     } else if (arg.startsWith('--db-name=')) {
-      args.dbName = arg.split('=')[1];
+      args.dbName = arg.substring('--db-name='.length);
     } else if (arg === '--force-reset') {
       args.forceReset = true;
     }

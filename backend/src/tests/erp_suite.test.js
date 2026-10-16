@@ -24,7 +24,7 @@ import { getProjectAIReport } from '../controllers/ai.controller.js';
 
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/student_attendance_db';
+const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/crm';
 
 const mockResponse = () => {
   const res = {};

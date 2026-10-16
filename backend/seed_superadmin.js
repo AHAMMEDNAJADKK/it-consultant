@@ -1,35 +1,44 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
+import dns from 'dns';
 import User from './src/models/user.model.js';
+
+dns.setDefaultResultOrder('ipv4first');
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
+} catch (_) {}
 
 dotenv.config();
 
 async function run() {
   try {
-    const mongoUri = process.env.DATABASE_URL || process.env.MONGO_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/crm';
-    console.log('Connecting to MongoDB at:', mongoUri);
+    const mongoUri = process.env.DATABASE_URL || process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (!mongoUri) {
+      throw new Error('No database URI defined in environment');
+    }
     await mongoose.connect(mongoUri);
-    console.log('Connected!');
+    console.log('Connected to MongoDB Atlas!');
 
     // 1. Promote all existing Admin / HR users to Super Admin
-    const admins = await User.find({
-      $or: [
-        { role: 'admin' },
-        { role: 'hr' },
-        { role_id: '1' },
-        { role_id: '2' }
-      ]
-    });
-
-    console.log(`Found ${admins.length} Admin/HR users to promote to Super Admin:`);
-    for (const a of admins) {
-      a.isSuperAdmin = true;
-      a.role = 'superadmin';
-      a.role_id = '0';
-      await a.save();
-      console.log(` - Updated user: ${a.name} (${a.email}) -> role: superadmin`);
-    }
+    const updateResult = await User.updateMany(
+      {
+        $or: [
+          { role: 'admin' },
+          { role: 'hr' },
+          { role_id: '1' },
+          { role_id: '2' }
+        ]
+      },
+      {
+        $set: {
+          isSuperAdmin: true,
+          role: 'superadmin',
+          role_id: '0'
+        }
+      }
+    );
+    console.log(`Promoted ${updateResult.modifiedCount} Admin/HR users to Super Admin.`);
 
     // 2. Also ensure a dedicated Super Admin user account exists: superadmin@gmail.com
     let superAdmin = await User.findOne({ email: 'superadmin@gmail.com' });

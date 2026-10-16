@@ -4,8 +4,10 @@ import { schedulerService } from './src/services/scheduler.service.js';
 import { execSync } from 'child_process';
 
 const PORT = process.env.PORT || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 function freePort(port) {
+  if (process.env.NODE_ENV === 'production') return; // Do not attempt to kill ports in production containers
   try {
     if (process.platform === 'win32') {
       const result = execSync(
@@ -51,10 +53,12 @@ const startServer = () => {
     console.warn('⚠️ WARNING: JWT_SECRET environment variable is not defined in environment. Using default secure key fallback.');
   }
 
-  server = app.listen(PORT, () => {
+  server = app.listen(PORT, HOST, () => {
     console.log(`==================================================`);
-    console.log(`  🚀 Staff Management & CRM Server is active!`);
+    console.log(`  🚀 Nexora IT Suite & CRM Server is active!`);
+    console.log(`  Host: ${HOST}`);
     console.log(`  Port: ${PORT}`);
+    console.log(`  Mode: ${process.env.NODE_ENV || 'development'}`);
     console.log(`==================================================`);
 
     // Initialize scheduler only once after server starts
@@ -83,15 +87,26 @@ const startServer = () => {
 };
 
 // Graceful shutdown on nodemon restart (SIGUSR2) or process exit (SIGINT, SIGTERM)
-const handleGracefulShutdown = (signal) => {
+const handleGracefulShutdown = async (signal) => {
+  console.log(`\n🛑 Received ${signal}. Starting graceful shutdown...`);
   if (server) {
-    server.close(() => {
+    server.close(async () => {
+      try {
+        await mongoose.connection.close();
+        console.log('✅ MongoDB connection closed gracefully.');
+      } catch (_) {}
       if (signal === 'SIGUSR2') {
         process.kill(process.pid, 'SIGUSR2');
       } else {
         process.exit(0);
       }
     });
+
+    // Forced exit safeguard if graceful close takes longer than 10 seconds
+    setTimeout(() => {
+      console.warn('⚠️ Forcing process exit after shutdown timeout.');
+      process.exit(1);
+    }, 10000);
   } else {
     process.exit(0);
   }
@@ -101,9 +116,4 @@ process.once('SIGUSR2', () => handleGracefulShutdown('SIGUSR2'));
 process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
 
-if (mongoose.connection.readyState === 1) {
-  startServer();
-} else {
-  mongoose.connection.once('open', startServer);
-  setTimeout(startServer, 1500);
-}
+startServer();

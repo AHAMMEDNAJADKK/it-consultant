@@ -36,8 +36,12 @@ async function runSecurityAndEdgeCaseTests() {
   console.log('================================================================\n');
 
   try {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(MONGO_URI);
+    if (mongoose.connection.readyState !== 1) {
+      if (mongoose.connection.readyState === 0) {
+        await mongoose.connect(MONGO_URI);
+      } else {
+        await new Promise((resolve) => mongoose.connection.once('connected', resolve));
+      }
     }
     console.log(' Connected to MongoDB Atlas for security testing.\n');
 

@@ -55,7 +55,7 @@ const startServer = () => {
 
   server = app.listen(PORT, HOST, () => {
     console.log(`==================================================`);
-    console.log(`  🚀 Nexora IT Suite & CRM Server is active!`);
+    console.log(`  🚀 IT Consultant CRM Server is active!`);
     console.log(`  Host: ${HOST}`);
     console.log(`  Port: ${PORT}`);
     console.log(`  Mode: ${process.env.NODE_ENV || 'development'}`);

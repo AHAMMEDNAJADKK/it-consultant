@@ -1,4 +1,4 @@
-# Nexora IT Suite — IT Services & Software Development ERP
+# IT Consultant — IT Services & Software Development ERP
 
 [![Node.js](https://img.shields.io/badge/Node.js-v18%2B-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
@@ -6,7 +6,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-brightgreen.svg)](https://www.mongodb.com/atlas)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8.svg)](https://tailwindcss.com/)
 
-**Nexora IT Suite** is a full-stack enterprise **IT Services CRM & Project Management ERP** tailored specifically for software development firms, digital agencies, and IT consulting organizations.
+**IT Consultant** is a full-stack enterprise **IT Services CRM & Project Management ERP** tailored specifically for software development firms, digital agencies, and IT consulting organizations.
 
 ---
 
@@ -172,4 +172,4 @@ npm run test:client
 ---
 
 ## 📄 License
-Internal proprietary software for Nexora IT Suite.
+Internal proprietary software for IT Consultant.

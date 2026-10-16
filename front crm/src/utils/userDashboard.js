@@ -5,7 +5,7 @@
  */
 
 export const ALL_DASHBOARD_ITEMS = [
-  { label: 'Dashboard', path: '/dashboard', aliases: ['admin dashboard', 'main dashboard', 'superadmin dashboard', 'nexora command center', 'command center'] },
+  { label: 'Dashboard', path: '/dashboard', aliases: ['admin dashboard', 'main dashboard', 'superadmin dashboard', 'it consultant command center', 'nexora command center', 'command center'] },
   { label: 'MD Dashboard', path: '/md-dashboard', aliases: ['md dashboard', 'coo dashboard', 'executive dashboard'] },
   { label: 'HR Dashboard', path: '/hr-dashboard', aliases: ['hr dashboard', 'recruiter dashboard', 'hr'] },
   { label: 'Lead Dashboard', path: '/lead-dashboard', aliases: ['lead dashboard', 'sales dashboard', 'telecaller dashboard', 'lead'] },

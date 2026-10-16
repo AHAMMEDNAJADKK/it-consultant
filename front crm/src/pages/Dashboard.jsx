@@ -64,7 +64,7 @@ export default function Dashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <Sparkles size={14} /> Nexora IT Suite — Executive & Delivery Dashboard
+              <Sparkles size={14} /> IT Consultant — Executive & Delivery Dashboard
             </div>
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight">
               Welcome back, {user?.name || 'Engineer'}

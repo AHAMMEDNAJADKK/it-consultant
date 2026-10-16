@@ -139,7 +139,7 @@ app.get('/health', (req, res) => {
     status: isDbReady ? 'healthy' : 'degraded',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
-    service: 'Nexora IT Suite API',
+    service: 'IT Consultant API',
     database: {
       status: getDatabaseState(),
       readyState: mongoose.connection.readyState
@@ -155,7 +155,7 @@ app.get('/api/health', (req, res) => {
     status: isDbReady ? 'healthy' : 'degraded',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
-    service: 'Nexora IT Suite API',
+    service: 'IT Consultant API',
     database: {
       status: getDatabaseState(),
       readyState: mongoose.connection.readyState
@@ -233,7 +233,7 @@ app.use('/api', apiRoutes);      // Legacy base fallback route handler
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
-    message: "CRM Backend Server is running successfully."
+    message: "IT Consultant CRM Backend Server is running successfully."
   });
 });
 

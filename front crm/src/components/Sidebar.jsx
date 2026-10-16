@@ -96,7 +96,7 @@ const CATEGORY_CONFIG = {
 
 const menuItems = [
   // --- OVERVIEW (Module 1) ---
-  { icon: LayoutDashboard, label: 'Nexora Command Center', path: '/dashboard', category: 'Overview', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR', 'pm', 'lead', 'manager', 'developer'] },
+  { icon: LayoutDashboard, label: 'IT Consultant Command Center', path: '/dashboard', category: 'Overview', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR', 'pm', 'lead', 'manager', 'developer'] },
   { icon: CheckCircle2, label: 'Approvals', path: '/approvals', category: 'Overview', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'management'] },
   { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview' },
   { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview' },
@@ -498,7 +498,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       }
       
       const isPrivilegedUser = ['0', '1', '2', '10', 'admin', 'hr', 'superadmin', 'manager', 'team_lead', 'teamlead', 'tl', 'md', 'pm'].includes(currentUserRole) || !!userObj.isTeamLead;
-      const DEFAULT_EMPLOYEE_LABELS = ['Nexora Command Center', 'Dashboard', 'Agile Sprints', 'Task Management', 'Task Assign', 'Support Tickets', 'Developer Report', 'Notifications', 'Attendance', 'Leave Requests', 'AI Project Reports'];
+      const DEFAULT_EMPLOYEE_LABELS = ['IT Consultant Command Center', 'Nexora Command Center', 'Command Center', 'Dashboard', 'Agile Sprints', 'Task Management', 'Task Assign', 'Support Tickets', 'Developer Report', 'Notifications', 'Attendance', 'Leave Requests', 'AI Project Reports'];
 
       const visible = menuItems.filter(item => {
         if (item.excludeRoles && item.excludeRoles.includes(currentUserRole)) {
@@ -625,15 +625,15 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         {/* Logo header */}
         <div className="h-16 flex items-center justify-between px-4 shrink-0 overflow-hidden border-b border-slate-100 dark:border-slate-800/40">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 flex items-center justify-center text-white font-black text-base shadow-md shadow-indigo-500/20 shrink-0">
-              N
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-500/20 shrink-0">
+              ITC
             </div>
             {!isCollapsed && (
               <div className="flex flex-col truncate">
                 <span className="font-extrabold text-sm text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
-                  Nexora <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">ERP</span>
+                  IT Consultant <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">CRM</span>
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">IT Services Suite</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">IT Services & ERP</span>
               </div>
             )}
           </div>
@@ -704,12 +704,12 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
       >
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-base shadow-md shrink-0">
-              N
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white font-black text-xs shadow-md shrink-0">
+              ITC
             </div>
             <div className="flex flex-col">
-              <span className="font-extrabold text-sm text-slate-900 dark:text-white tracking-tight">Nexora IT Suite</span>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">IT Services ERP</span>
+              <span className="font-extrabold text-sm text-slate-900 dark:text-white tracking-tight">IT Consultant</span>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">IT Services & ERP</span>
             </div>
           </div>
           <button 

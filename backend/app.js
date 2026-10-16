@@ -8,12 +8,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dns from 'dns';
 
-// Fix querySrv ECONNREFUSED issues on local ISP/router DNS resolvers
+// Ensure IPv4 lookup precedence
 dns.setDefaultResultOrder('ipv4first');
-try {
-  dns.setServers(['8.8.8.8', '8.8.4.4', '1.1.1.1']);
-} catch (err) {
-  // Fallback to system default DNS if setting servers fails
+if (process.env.CUSTOM_DNS_SERVERS) {
+  try {
+    dns.setServers(process.env.CUSTOM_DNS_SERVERS.split(',').map(s => s.trim()).filter(Boolean));
+  } catch (err) {
+    // Fallback to system default DNS if custom DNS setting fails
+  }
 }
 
 // Route Imports
@@ -121,7 +123,10 @@ app.get('/api/public/pdf/:token', servePublicPdf);
 app.get('/public/pdf/:token/raw', servePublicPdf);
 app.get('/public/pdf/:token', servePublicPdf);
 
-// Database state helper
+// Database state helper & diagnostic tracking
+let lastDbError = null;
+let lastDbAttempt = null;
+
 const getDatabaseState = () => {
   const dbStates = {
     0: 'disconnected',
@@ -142,7 +147,9 @@ app.get('/health', (req, res) => {
     service: 'IT Consultant API',
     database: {
       status: getDatabaseState(),
-      readyState: mongoose.connection.readyState
+      readyState: mongoose.connection.readyState,
+      lastError: isDbReady ? null : lastDbError,
+      lastAttempt: lastDbAttempt
     },
     environment: process.env.NODE_ENV || 'development'
   });
@@ -158,7 +165,9 @@ app.get('/api/health', (req, res) => {
     service: 'IT Consultant API',
     database: {
       status: getDatabaseState(),
-      readyState: mongoose.connection.readyState
+      readyState: mongoose.connection.readyState,
+      lastError: isDbReady ? null : lastDbError,
+      lastAttempt: lastDbAttempt
     },
     environment: process.env.NODE_ENV || 'development'
   });
@@ -177,7 +186,8 @@ app.use(['/api', '/v1', '/auth'], (req, res, next) => {
     return res.status(503).json({
       success: false,
       message: 'Database service is currently unavailable. Please try again shortly.',
-      code: 'DATABASE_UNAVAILABLE'
+      code: 'DATABASE_UNAVAILABLE',
+      reason: lastDbError || 'Database connection pending or disconnected'
     });
   }
   next();
@@ -313,6 +323,7 @@ export const connectToDatabase = async () => {
   const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
 
   if (!rawUri || !rawUri.trim()) {
+    lastDbError = 'Missing database connection URI in environment variables (MONGODB_URI)';
     console.error('❌ CRITICAL CONFIGURATION ERROR: No MongoDB Atlas connection URI provided.');
     console.error('   Please define MONGODB_URI (or MONGO_URI / DATABASE_URL) in your environment variables.');
     return;
@@ -320,6 +331,7 @@ export const connectToDatabase = async () => {
 
   const cleanUri = rawUri.trim().replace(/^["']|["']$/g, '');
   isConnecting = true;
+  lastDbAttempt = new Date().toISOString();
 
   try {
     console.log(`🔌 Connecting to MongoDB Atlas: ${maskMongoUri(cleanUri)}`);
@@ -334,6 +346,7 @@ export const connectToDatabase = async () => {
     const host = mongoose.connection.host || 'MongoDB Atlas';
     const dbName = mongoose.connection.name || 'crm';
     console.log(` ✅ Successfully connected to MongoDB Atlas [database: ${dbName}, host: ${host}].`);
+    lastDbError = null;
 
     if (reconnectTimer) {
       clearTimeout(reconnectTimer);
@@ -381,7 +394,11 @@ export const connectToDatabase = async () => {
       console.error(' ❌ Failed to seed default departments:', seedErr.message);
     }
   } catch (error) {
-    console.error(' ❌ CRITICAL DATABASE CONNECTION ERROR:', error.message);
+    const rawErrorMsg = error.message || String(error);
+    const sanitizedErrorMsg = rawErrorMsg.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@');
+    lastDbError = sanitizedErrorMsg;
+
+    console.error(' ❌ CRITICAL DATABASE CONNECTION ERROR:', sanitizedErrorMsg);
     console.error('    API endpoints requiring database operations will respond with 503 Service Unavailable.');
 
     // Auto-retry connection after 10 seconds if not already scheduled

@@ -121,32 +121,48 @@ app.get('/api/public/pdf/:token', servePublicPdf);
 app.get('/public/pdf/:token/raw', servePublicPdf);
 app.get('/public/pdf/:token', servePublicPdf);
 
-// Health Check Endpoints (Reports service status and DB readiness without leaking secrets)
-const healthCheckHandler = (req, res) => {
-  const isDbReady = mongoose.connection.readyState === 1;
+// Database state helper
+const getDatabaseState = () => {
   const dbStates = {
     0: 'disconnected',
     1: 'connected',
     2: 'connecting',
     3: 'disconnecting'
   };
-  const stateStr = dbStates[mongoose.connection.readyState] || 'unknown';
+  return dbStates[mongoose.connection.readyState] || 'unknown';
+};
 
+// 1. Process Liveness Check (Reports server process availability for hosting platform probes — returns 200)
+app.get('/health', (req, res) => {
+  const isDbReady = mongoose.connection.readyState === 1;
+  return res.status(200).json({
+    status: isDbReady ? 'healthy' : 'degraded',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString(),
+    service: 'Nexora IT Suite API',
+    database: {
+      status: getDatabaseState(),
+      readyState: mongoose.connection.readyState
+    },
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// 2. Database Readiness Check (Reports database readiness — returns 200 when ready, 503 when degraded)
+app.get('/api/health', (req, res) => {
+  const isDbReady = mongoose.connection.readyState === 1;
   return res.status(isDbReady ? 200 : 503).json({
     status: isDbReady ? 'healthy' : 'degraded',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     service: 'Nexora IT Suite API',
     database: {
-      status: stateStr,
+      status: getDatabaseState(),
       readyState: mongoose.connection.readyState
     },
     environment: process.env.NODE_ENV || 'development'
   });
-};
-
-app.get('/api/health', healthCheckHandler);
-app.get('/health', healthCheckHandler);
+});
 
 // Database readiness guard: do not accept normal API traffic if database is required but unavailable
 app.use(['/api', '/v1', '/auth'], (req, res, next) => {
@@ -154,6 +170,10 @@ app.use(['/api', '/v1', '/auth'], (req, res, next) => {
     return next();
   }
   if (mongoose.connection.readyState !== 1) {
+    // If disconnected, trigger a connection attempt in the background
+    if (mongoose.connection.readyState === 0 && typeof connectToDatabase === 'function') {
+      connectToDatabase().catch(() => {});
+    }
     return res.status(503).json({
       success: false,
       message: 'Database service is currently unavailable. Please try again shortly.',
@@ -255,8 +275,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 7. Database Connection Section (Secure MongoDB Atlas Configuration)
-const MONGO_URI = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
+// 7. Database Connection Section (Secure MongoDB Atlas Configuration with Auto-Retry)
+let reconnectTimer = null;
+let isConnecting = false;
 
 const maskMongoUri = (uri) => {
   if (!uri) return '<none>';
@@ -268,71 +289,124 @@ const maskMongoUri = (uri) => {
   }
 };
 
-if (!MONGO_URI) {
-  console.error('❌ CRITICAL CONFIGURATION ERROR: No MongoDB Atlas connection URI provided.');
-  console.error('   Please define MONGODB_URI (or MONGO_URI / DATABASE_URL) in your environment variables.');
-} else {
-  console.log(`🔌 Connecting to MongoDB Atlas: ${maskMongoUri(MONGO_URI)}`);
-
-  mongoose.connect(MONGO_URI, {
-    dbName: process.env.MONGODB_DB_NAME || 'crm',
-    serverSelectionTimeoutMS: 10000,
-    maxPoolSize: 10
-  })
-    .then(async () => {
-      const host = mongoose.connection.host || 'MongoDB Atlas';
-      const dbName = mongoose.connection.name || 'crm';
-      console.log(` ✅ Successfully connected to MongoDB Atlas [database: ${dbName}, host: ${host}].`);
-
-      try {
-        const count = await Designation.countDocuments();
-        if (count === 0) {
-          const defaultDesignations = [
-            "HR Manager",
-            "Graphic Designer",
-            "Digital Marketer",
-            "React Developer",
-            "Node Developer",
-            "Flutter Developer",
-            "Fullstack",
-            "Admin",
-            "Manager"
-          ];
-          await Designation.insertMany(defaultDesignations.map(name => ({ name, isActive: true })));
-          console.log(' 🌱 Successfully seeded default designations.');
-        }
-      } catch (seedErr) {
-        console.error(' ❌ Failed to seed default designations:', seedErr.message);
-      }
-
-      try {
-        const deptCount = await Department.countDocuments();
-        if (deptCount === 0) {
-          const defaultDepartments = [
-            { name: "HR & Admin", code: "HR" },
-            { name: "Marketing", code: "MKT" },
-            { name: "Development", code: "DEV" },
-            { name: "Designing", code: "DSN" }
-          ];
-          await Department.insertMany(defaultDepartments.map(d => ({ 
-            name: d.name, 
-            code: d.code, 
-            status: true 
-          })));
-          console.log(' 🌱 Successfully seeded default departments.');
-        }
-      } catch (seedErr) {
-        console.error(' ❌ Failed to seed default departments:', seedErr.message);
-      }
-    })
-    .catch((error) => {
-      console.error(' ❌ CRITICAL DATABASE CONNECTION ERROR:', error.message);
-      console.error('    API endpoints requiring database operations will respond with 503 Service Unavailable.');
+export const connectToDatabase = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+  if (mongoose.connection.readyState === 2 || isConnecting) {
+    return new Promise((resolve) => {
+      const finish = () => {
+        cleanup();
+        resolve();
+      };
+      const cleanup = () => {
+        mongoose.connection.removeListener('connected', finish);
+        mongoose.connection.removeListener('error', finish);
+        clearTimeout(timer);
+      };
+      const timer = setTimeout(finish, 11000);
+      mongoose.connection.once('connected', finish);
+      mongoose.connection.once('error', finish);
     });
-}
+  }
+
+  const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
+
+  if (!rawUri || !rawUri.trim()) {
+    console.error('❌ CRITICAL CONFIGURATION ERROR: No MongoDB Atlas connection URI provided.');
+    console.error('   Please define MONGODB_URI (or MONGO_URI / DATABASE_URL) in your environment variables.');
+    return;
+  }
+
+  const cleanUri = rawUri.trim().replace(/^["']|["']$/g, '');
+  isConnecting = true;
+
+  try {
+    console.log(`🔌 Connecting to MongoDB Atlas: ${maskMongoUri(cleanUri)}`);
+
+    await mongoose.connect(cleanUri, {
+      dbName: process.env.MONGODB_DB_NAME || 'crm',
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
+      maxPoolSize: 10
+    });
+
+    const host = mongoose.connection.host || 'MongoDB Atlas';
+    const dbName = mongoose.connection.name || 'crm';
+    console.log(` ✅ Successfully connected to MongoDB Atlas [database: ${dbName}, host: ${host}].`);
+
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+    }
+
+    try {
+      const count = await Designation.countDocuments();
+      if (count === 0) {
+        const defaultDesignations = [
+          "HR Manager",
+          "Graphic Designer",
+          "Digital Marketer",
+          "React Developer",
+          "Node Developer",
+          "Flutter Developer",
+          "Fullstack",
+          "Admin",
+          "Manager"
+        ];
+        await Designation.insertMany(defaultDesignations.map(name => ({ name, isActive: true })));
+        console.log(' 🌱 Successfully seeded default designations.');
+      }
+    } catch (seedErr) {
+      console.error(' ❌ Failed to seed default designations:', seedErr.message);
+    }
+
+    try {
+      const deptCount = await Department.countDocuments();
+      if (deptCount === 0) {
+        const defaultDepartments = [
+          { name: "HR & Admin", code: "HR" },
+          { name: "Marketing", code: "MKT" },
+          { name: "Development", code: "DEV" },
+          { name: "Designing", code: "DSN" }
+        ];
+        await Department.insertMany(defaultDepartments.map(d => ({ 
+          name: d.name, 
+          code: d.code, 
+          status: true 
+        })));
+        console.log(' 🌱 Successfully seeded default departments.');
+      }
+    } catch (seedErr) {
+      console.error(' ❌ Failed to seed default departments:', seedErr.message);
+    }
+  } catch (error) {
+    console.error(' ❌ CRITICAL DATABASE CONNECTION ERROR:', error.message);
+    console.error('    API endpoints requiring database operations will respond with 503 Service Unavailable.');
+
+    // Auto-retry connection after 10 seconds if not already scheduled
+    if (!reconnectTimer && mongoose.connection.readyState !== 1) {
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectToDatabase().catch(() => {});
+      }, 10000);
+    }
+  } finally {
+    isConnecting = false;
+  }
+};
+
+// Initial connection attempt on startup
+connectToDatabase().catch(() => {});
 
 mongoose.connection.on('disconnected', () => {
-  console.warn('⚠️ MongoDB Atlas connection lost. Service is degraded.');
+  console.warn('⚠️ MongoDB Atlas connection lost. Service is degraded. Scheduling auto-reconnect...');
+  if (!reconnectTimer && mongoose.connection.readyState !== 1) {
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      connectToDatabase().catch(() => {});
+    }, 5000);
+  }
 });
 
 mongoose.connection.on('reconnected', () => {

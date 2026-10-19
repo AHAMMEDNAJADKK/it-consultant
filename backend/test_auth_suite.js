@@ -1,8 +1,8 @@
 const TEST_PORT = 5098;
-const TEST_DB_URI = 'mongodb://127.0.0.1:27017/student_attendance_db';
+const TEST_DB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/it_consultant_crm';
 
 process.env.MONGODB_URI = TEST_DB_URI;
-process.env.MONGODB_DB_NAME = 'student_attendance_db';
+process.env.MONGODB_DB_NAME = 'it_consultant_crm';
 
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';

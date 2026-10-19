@@ -137,10 +137,10 @@ const getDatabaseState = () => {
   return dbStates[mongoose.connection.readyState] || 'unknown';
 };
 
-// 1. Process Liveness Check (Reports server process availability for hosting platform probes — returns 200)
+// 1. Process Readiness Check (Accurately reflects database dependency readiness — returns 200 when ready, 503 when degraded)
 app.get('/health', (req, res) => {
   const isDbReady = mongoose.connection.readyState === 1;
-  return res.status(200).json({
+  return res.status(isDbReady ? 200 : 503).json({
     status: isDbReady ? 'healthy' : 'degraded',
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
@@ -325,7 +325,7 @@ export const connectToDatabase = async () => {
   }
 
   const rawUri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
-  const fallbackClusterUri = (process.env.MONGODB_FALLBACK_URI || Buffer.from('bW9uZ29kYitzcnY6Ly9zaGFiZWViYTo5OTk1OTgyMzI0QGNsdXN0ZXIwLmkyM3R6YmYubW9uZ29kYi5uZXQvY3JtP3JldHJ5V3JpdGVzPXRydWUmdz1tYWpvcml0eQ==', 'base64').toString('utf-8')).trim().replace(/^["']|["']$/g, '');
+  const fallbackClusterUri = (process.env.MONGODB_FALLBACK_URI || '').trim().replace(/^["']|["']$/g, '');
 
   if (!rawUri || !rawUri.trim()) {
     lastDbError = 'Missing database connection URI in environment variables (MONGODB_URI)';
@@ -342,14 +342,14 @@ export const connectToDatabase = async () => {
     console.log(`🔌 Connecting to MongoDB Atlas: ${maskMongoUri(targetUri)}`);
 
     await mongoose.connect(targetUri, {
-      dbName: process.env.MONGODB_DB_NAME || 'crm',
+      dbName: process.env.MONGODB_DB_NAME || 'it_consultant_crm',
       serverSelectionTimeoutMS: 10000,
       connectTimeoutMS: 10000,
       maxPoolSize: 10
     });
 
     const host = mongoose.connection.host || 'MongoDB Atlas';
-    const dbName = mongoose.connection.name || 'crm';
+    const dbName = mongoose.connection.name || 'it_consultant_crm';
     console.log(` ✅ Successfully connected to MongoDB Atlas [database: ${dbName}, host: ${host}].`);
     lastDbError = null;
 

@@ -75,8 +75,11 @@ async function runERPTestSuite() {
     try {
       await mongoose.connect(MONGO_URI);
     } catch (primaryErr) {
-      const fallbackUri = (process.env.MONGODB_FALLBACK_URI || Buffer.from('bW9uZ29kYitzcnY6Ly9zaGFiZWViYTo5OTk1OTgyMzI0QGNsdXN0ZXIwLmkyM3R6YmYubW9uZ29kYi5uZXQvY3JtP3JldHJ5V3JpdGVzPXRydWUmdz1tYWpvcml0eQ==', 'base64').toString('utf-8')).trim();
-      await mongoose.connect(fallbackUri);
+      if (process.env.MONGODB_FALLBACK_URI) {
+        await mongoose.connect(process.env.MONGODB_FALLBACK_URI.trim());
+      } else {
+        throw primaryErr;
+      }
     }
     console.log(' Connected to MongoDB Atlas for verification.\n');
 

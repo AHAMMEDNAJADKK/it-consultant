@@ -18,7 +18,7 @@ services:
       - key: MONGODB_URI
         sync: false
       - key: MONGODB_DB_NAME
-        value: crm
+        value: it_consultant_crm
       - key: JWT_SECRET
         generateValue: true
       - key: ALLOWED_ORIGINS

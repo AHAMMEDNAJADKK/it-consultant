@@ -28,7 +28,15 @@ async function runClientTestSuite() {
   console.log('====================================================');
 
   try {
-    await mongoose.connect(MONGO_URI);
+    try {
+      await mongoose.connect(MONGO_URI);
+    } catch (primaryErr) {
+      if (process.env.MONGODB_FALLBACK_URI) {
+        await mongoose.connect(process.env.MONGODB_FALLBACK_URI.trim());
+      } else {
+        throw primaryErr;
+      }
+    }
     console.log('✅ Connected to MongoDB for testing.');
 
     const mockUserId = new mongoose.Types.ObjectId();

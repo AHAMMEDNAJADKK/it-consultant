@@ -1,4 +1,4 @@
-import app from './app.js';
+import app, { connectToDatabase } from './app.js';
 import mongoose from 'mongoose';
 import { schedulerService } from './src/services/scheduler.service.js';
 import { execSync } from 'child_process';
@@ -116,4 +116,15 @@ process.once('SIGUSR2', () => handleGracefulShutdown('SIGUSR2'));
 process.on('SIGINT', () => handleGracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => handleGracefulShutdown('SIGTERM'));
 
-startServer();
+const init = async () => {
+  try {
+    if (typeof connectToDatabase === 'function') {
+      await connectToDatabase();
+    }
+  } catch (dbErr) {
+    console.error('⚠️ Initial database connection error:', dbErr.message);
+  }
+  startServer();
+};
+
+init();

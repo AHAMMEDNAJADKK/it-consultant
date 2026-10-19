@@ -7,6 +7,7 @@
     "install:front": "npm --prefix \"front crm\" install",
     "install:backend": "npm --prefix backend install",
     "dev": "npm --prefix \"front crm\" run dev",
+    "seed:superadmin": "npm --prefix backend run seed:superadmin",
     "start": "npm --prefix backend start"
   },
   "dependencies": {

@@ -57,8 +57,8 @@ async function provisionSuperAdmin() {
     process.exit(1);
   }
 
-  const mongoUri = args.dbUri || process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/student_attendance_db';
-  const targetDbName = args.dbName || process.env.MONGODB_DB_NAME || 'crm';
+  const mongoUri = args.dbUri || process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/it_consultant_crm';
+  const targetDbName = args.dbName || process.env.MONGODB_DB_NAME || 'it_consultant_crm';
 
   try {
     console.log(`🔌 Connecting to database: ${maskMongoUri(mongoUri)} [database: ${targetDbName}]...`);

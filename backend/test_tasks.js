@@ -4,8 +4,8 @@ import Task from './src/models/task.model.js';
 import Department from './src/modules/departments/department.model.js';
 
 const run = async () => {
-  try {
-    await mongoose.connect('mongodb+srv://shabeeba:9995982324@cluster0.i23tzbf.mongodb.net/crm?appName=Cluster0');
+    const uri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/it_consultant_crm';
+    await mongoose.connect(uri);
     
     // Pick Liyana
     const user = await User.findOne({ name: /Liyana/i });

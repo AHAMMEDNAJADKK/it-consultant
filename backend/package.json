@@ -10,6 +10,7 @@
     "dev": "nodemon --exec \"node start.js\"",
     "seed": "node seed_superadmin.js",
     "seed:superadmin": "node seed_superadmin.js",
+    "seed:sample-data": "node seed_sample_data.js",
     "test:auth": "node test_auth_suite.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

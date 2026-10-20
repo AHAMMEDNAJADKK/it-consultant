@@ -5,7 +5,6 @@ import Project from '../models/project.model.js';
 import ProjectDocument from '../models/projectDocument.model.js';
 import ProjectActivity from '../models/projectActivity.model.js';
 import User from '../models/user.model.js';
-import SLAContract from '../models/slaContract.model.js';
 import SupportTicket from '../models/supportTicket.model.js';
 import Income from '../models/income.model.js';
 import mongoose from 'mongoose';
@@ -162,7 +161,7 @@ export const getClientById = async (req, res) => {
       .sort({ dueDate: 1 });
 
     const [slaContracts, supportTickets, invoices] = await Promise.all([
-      SLAContract.find({ client: client._id }).sort({ createdAt: -1 }).lean(),
+      Promise.resolve([]),
       SupportTicket.find({ client: client._id }).sort({ createdAt: -1 }).limit(10).lean(),
       Income.find({ client: client._id, isDeleted: { $ne: true } }).sort({ createdAt: -1 }).limit(10).lean()
     ]);

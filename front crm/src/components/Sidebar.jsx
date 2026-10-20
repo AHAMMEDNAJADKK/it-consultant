@@ -5,6 +5,7 @@ import { useUser } from '../contexts/UserContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resolveUserDashboardPath } from '../utils/userDashboard';
 import { 
+  Bug,
   LayoutDashboard, 
   UserCheck, 
   ListCheck, 
@@ -72,55 +73,61 @@ import {
 
 const CATEGORY_ORDER = [
   'Overview',
-  'Clients & CRM',
-  'Projects & Agile',
-  'Engineering & Git',
-  'Support & SLA',
-  'Finance & Accounts',
-  'Reports & AI',
-  'People & HR',
-  'Daily Operations'
+  'Clients & Leads',
+  'Projects',
+  'Tasks',
+  'Developer Reports',
+  'Sprint Board',
+  'Bug Tracking',
+  'Accounts & Finance',
+  'Git Integration',
+  'Team & Settings'
 ];
 
 const CATEGORY_CONFIG = {
   'Overview': { label: 'Overview', icon: LayoutDashboard },
-  'Clients & CRM': { label: 'Clients & CRM', icon: Building2 },
-  'Projects & Agile': { label: 'Projects & Agile', icon: FolderKanban },
-  'Engineering & Git': { label: 'Engineering & Git', icon: GitBranch },
-  'Support & SLA': { label: 'Support & SLA', icon: LifeBuoy },
-  'Finance & Accounts': { label: 'Finance & Accounts', icon: Wallet },
-  'Reports & AI': { label: 'Reports & AI', icon: Sparkles },
-  'People & HR': { label: 'People & HR', icon: Users },
-  'Daily Operations': { label: 'Daily Operations', icon: Clock }
+  'Clients & Leads': { label: 'Clients & Leads', icon: Building2 },
+  'Projects': { label: 'Projects', icon: FolderKanban },
+  'Tasks': { label: 'Tasks', icon: ListCheck },
+  'Developer Reports': { label: 'Developer Reports', icon: Code2 },
+  'Sprint Board': { label: 'Sprint Board', icon: Layers },
+  'Bug Tracking': { label: 'Bug Tracking', icon: Bug },
+  'Accounts & Finance': { label: 'Accounts & Finance', icon: Wallet },
+  'Git Integration': { label: 'Git Integration', icon: GitBranch },
+  'Team & Settings': { label: 'Team & Settings', icon: UserCog }
 };
 
 const menuItems = [
-  // --- OVERVIEW (Module 1) ---
-  { icon: LayoutDashboard, label: 'IT Consultant Command Center', path: '/dashboard', category: 'Overview', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR', 'pm', 'lead', 'manager', 'developer'] },
+  // --- OVERVIEW ---
   { icon: CheckCircle2, label: 'Approvals', path: '/approvals', category: 'Overview', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'management'] },
   { icon: Calendar, label: 'Leave Requests', path: '/leaves', category: 'Overview' },
   { icon: Bell, label: 'Notifications', path: '/notifications', category: 'Overview' },
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/common-dashboard', category: 'Overview', isCommonDashboardFallback: true },
+  { icon: FileText, label: 'Daily Shift Report', path: '/daily-shift-report', category: 'Overview' },
 
-  // --- CLIENTS & CRM (Modules 2 & 3) ---
-  { icon: Briefcase, label: 'Client Leads', path: '/client-leads', category: 'Clients & CRM', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'sales'] },
-  { icon: Building2, label: 'Clients & Accounts', path: '/clients', category: 'Clients & CRM', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'pm'] },
+  // --- CLIENTS & LEADS ---
+  { icon: Briefcase, label: 'Client Leads', path: '/client-leads', category: 'Clients & Leads', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'sales'] },
+  { icon: Building2, label: 'Clients & Accounts', path: '/clients', category: 'Clients & Leads', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'pm'] },
 
-  // --- PROJECTS & AGILE (Modules 4, 5, 9) ---
-  { icon: FolderKanban, label: 'Projects', path: '/projects', category: 'Projects & Agile', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'developer', 'pm'] },
-  { icon: Layers, label: 'Agile Sprints', path: '/sprints', category: 'Projects & Agile', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'developer', 'pm'] },
-  { icon: ListCheck, label: 'Task Management', path: '/todo', category: 'Projects & Agile' },
+  // --- PROJECTS ---
+  { icon: FolderKanban, label: 'Projects', path: '/projects', category: 'Projects', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'developer', 'pm'] },
+  { icon: BarChart2, label: 'Project Reports', path: '/projects/reports', category: 'Projects', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'pm'] },
 
-  // --- ENGINEERING & GIT (Modules 6 & 10) ---
-  { icon: GitBranch, label: 'Git Integration', path: '/git-integrations', category: 'Engineering & Git', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'developer', 'pm'], allowedDepartmentNames: ['dev', 'development', 'engineering', 'it', 'r&d'], allowedDesignationNames: ['developer', 'dev', 'engineer', 'lead', 'tech', 'software'] },
-  { icon: FileCode, label: 'Developer Report', path: '/developer-report', category: 'Engineering & Git', allowedDesignationNames: ['developer', 'dev', 'junior', 'jr', 'software', 'engineer', 'react', 'node', 'flutter', 'coder', 'programmer', 'frontend', 'backend', 'fullstack', 'web', 'teamlead', 'lead'] },
+  // --- TASKS ---
+  { icon: ListCheck, label: 'Task Management', path: '/todo', category: 'Tasks' },
 
-  // --- SUPPORT & SLA (Modules 11 & 12) ---
-  { icon: LifeBuoy, label: 'Support Tickets', path: '/support-tickets', category: 'Support & SLA' },
-  { icon: FileCheck2, label: 'SLA & Maintenance', path: '/sla-contracts', category: 'Support & SLA', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'pm'] },
+  // --- DEVELOPER REPORTS ---
+  { icon: Code2, label: 'Developer Report', path: '/developer-report', category: 'Developer Reports', allowedDesignationNames: ['developer', 'dev', 'junior', 'jr', 'software', 'engineer', 'react', 'node', 'flutter', 'coder', 'programmer', 'frontend', 'backend', 'fullstack', 'web', 'teamlead', 'lead'] },
+  { icon: Sparkles, label: 'AI Project Reports', path: '/ai-report', category: 'Developer Reports' },
+  { icon: UsersRound, label: 'Team Reports', path: '/team-reports', category: 'Developer Reports', isTeamLeadOnly: true },
 
-  // --- FINANCE & ACCOUNTS (Module 8) ---
-  { icon: Wallet, label: 'Accounts Overview', path: '/accounts', category: 'Finance & Accounts', children: [
+  // --- SPRINT BOARD ---
+  { icon: Layers, label: 'Sprint Board', path: '/sprints', category: 'Sprint Board', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'developer', 'pm'] },
+
+  // --- BUG TRACKING ---
+  { icon: Bug, label: 'Bug Tracking', path: '/bugs', category: 'Bug Tracking' },
+
+  // --- ACCOUNTS & FINANCE ---
+  { icon: Wallet, label: 'Accounts Overview', path: '/accounts', category: 'Accounts & Finance', children: [
       { icon: Coins, label: 'Capital', path: '/accounts/capital' },
       { icon: TrendingUp, label: 'Sales', path: '/accounts/sales' },
       { icon: ShoppingBag, label: 'Income & Invoices', path: '/accounts/income' },
@@ -133,28 +140,19 @@ const menuItems = [
       { icon: BarChart3, label: 'Profit and Loss', path: '/accounts/reports' }
     ]
   },
-  { icon: TrendingUp, label: 'Income & Invoices', path: '/accounts/income', category: 'Finance & Accounts', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'accounts', 'finance'], allowedDesignationNames: ['hr', 'recruiter', 'accountant', 'finance', 'accounts'] },
-  { icon: Receipt, label: 'Payslips', path: '/payslips', category: 'Finance & Accounts', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'accounts', 'finance'], allowedDesignationNames: ['hr', 'recruiter', 'accountant', 'finance', 'accounts'] },
-  { icon: CreditCard, label: 'Personal Payslip', path: '/my-payslip', category: 'Finance & Accounts' },
+  { icon: TrendingUp, label: 'Income & Invoices', path: '/accounts/income', category: 'Accounts & Finance', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'accounts', 'finance'], allowedDesignationNames: ['hr', 'recruiter', 'accountant', 'finance', 'accounts'] },
+  { icon: Receipt, label: 'Payslips', path: '/payslips', category: 'Accounts & Finance', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'accountant', 'superadmin', 'MD', 'COO', 'EXECUTIVE_DIRECTOR'], allowedDepartmentNames: ['hr', 'admin', 'accounts', 'finance'], allowedDesignationNames: ['hr', 'recruiter', 'accountant', 'finance', 'accounts'] },
+  { icon: CreditCard, label: 'Personal Payslip', path: '/my-payslip', category: 'Accounts & Finance' },
 
-  // --- REPORTS & AI (Module 7 & Analytics) ---
-  { icon: Sparkles, label: 'AI Project Reports', path: '/ai-report', category: 'Reports & AI' },
-  { icon: Award, label: 'KPI Analytics', path: '/performance-dashboard', category: 'Reports & AI', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'tl'] },
-  { icon: UsersRound, label: 'Team Reports', path: '/team-reports', category: 'Reports & AI', isTeamLeadOnly: true },
-  { icon: FileText, label: 'Daily Shift Report', path: '/daily-shift-report', category: 'Reports & AI' },
-  { icon: ClipboardList, label: 'Daily Report', path: '/basic-report', category: 'Reports & AI', isBasicReportFallback: true },
+  // --- GIT INTEGRATION ---
+  { icon: GitBranch, label: 'Git Integration', path: '/git-integrations', category: 'Git Integration', allowedRoles: ['0', '1', '2', '10', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'developer', 'pm'], allowedDepartmentNames: ['dev', 'development', 'engineering', 'it', 'r&d'], allowedDesignationNames: ['developer', 'dev', 'engineer', 'lead', 'tech', 'software'] },
 
-  // --- PEOPLE & HR ---
-  { icon: UserCheck, label: 'Staff Attendance', path: '/staff-attendance', category: 'People & HR' },
-  { icon: Users, label: 'Users & Team', path: '/users', category: 'People & HR', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin'] },
-  { icon: Building, label: 'Departments', path: '/departments', category: 'People & HR', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'] },
-  { icon: ShieldCheck, label: 'Sidebar Permissions', path: '/sidebar-permissions', category: 'People & HR', allowedRoles: ['0', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin'] },
-  { icon: UserCheck, label: 'Recruitment', path: '/recruitment', category: 'People & HR', allowedRoles: ['0', '1', '2', '3', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'recruiter'], allowedDesignationNames: ['hr', 'recruiter', 'admin', 'manager'] },
-
-  // --- DAILY OPERATIONS ---
-  { icon: Clock, label: 'Daily Operations OS', path: '/daily-operations', category: 'Daily Operations' },
-  { icon: UsersRound, label: 'TL Daily Operations', path: '/tl-daily-operations', category: 'Daily Operations', allowedRoles: ['0', '1', '2', '10', 'hr', 'admin', 'superadmin', 'manager', 'team_lead', 'teamlead', 'tl'], allowedDesignationNames: ['team lead', 'teamlead', 'tl', 'lead', 'manager', 'supervisor', 'hod'] },
-  { icon: Clock, label: 'Attendance', path: '/attendance', category: 'Daily Operations' },
+  // --- TEAM & SETTINGS ---
+  { icon: Users, label: 'Users & Team', path: '/users', category: 'Team & Settings', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'], allowedDepartmentNames: ['hr', 'admin'] },
+  { icon: Building, label: 'Departments', path: '/departments', category: 'Team & Settings', allowedRoles: ['0', '1', '2', 'hr', 'admin', 'superadmin'] },
+  { icon: ShieldCheck, label: 'Sidebar Permissions', path: '/sidebar-permissions', category: 'Team & Settings', allowedRoles: ['0', 'superadmin'], allowedDepartmentNames: ['hr', 'admin', 'hr/admin', 'hr & admin'] },
+  { icon: Settings, label: 'Settings', path: '/settings', category: 'Team & Settings' },
+  { icon: Clock, label: 'Attendance', path: '/attendance', category: 'Team & Settings' }
 ];
 
 // Simple Portal implementation to render the badge safely outside of parent overflow cropping
@@ -400,10 +398,8 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           'git integration': '/git-integrations',
           'git': '/git-integrations',
           'developer report': '/developer-report',
-          'support tickets': '/support-tickets',
-          'support': '/support-tickets',
-          'sla & maintenance': '/sla-contracts',
-          'sla contracts': '/sla-contracts',
+          'bug tracking': '/bugs',
+          'bugs': '/bugs',
           'ai reports': '/ai-report',
           'ai project reports': '/ai-report'
         };
@@ -573,28 +569,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
         }
       }
 
-      // Determine the user's primary dashboard and place it at the VERY TOP of the sidebar under Overview
-      const userDashboardPath = resolveUserDashboardPath(userObj);
-      let primaryDash = menuItems.find(item => item.path === userDashboardPath);
-      if (!primaryDash) {
-        primaryDash = visible.find(item => item.label.toLowerCase().includes('dashboard'));
-      }
-
-      let finalVisible = [...visible];
-      if (primaryDash) {
-        // Remove existing copy if present
-        finalVisible = finalVisible.filter(item => item.path !== primaryDash.path && item.label !== primaryDash.label);
-        // Unshift primary dashboard at the top under Overview category
-        finalVisible.unshift({ ...primaryDash, category: 'Overview' });
-      }
-
-      return finalVisible;
+      return visible;
     } catch (e) {
       console.error("Error reading operator authorization layout paths:", e);
       return menuItems.filter(item => !item.allowedRoles && !item.allowedDepartments && !item.allowedDesignations);
     }
   };
 
+  let userObj = liveUser;
+  if (!userObj) {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try { userObj = JSON.parse(savedUser); } catch (e) {}
+    }
+  }
+  const primaryDashboardPath = resolveUserDashboardPath(userObj) || '/dashboard';
   const visibleMenuItems = getVisibleMenuItems();
 
   // Group visible items by Category
@@ -653,8 +642,21 @@ const Sidebar = ({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMobileOpen })
           </button>
         </div>
 
-        {/* Menu Items (Grouped as Category Accordion Dropdowns) */}
+        {/* Menu Items */}
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-1.5 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Standalone Top-Level Dashboard Link (Outside Overview) */}
+          <div className="mb-2">
+            <NavItem
+              icon={<LayoutDashboard size={20} />}
+              label="Dashboard"
+              to={primaryDashboardPath}
+              active={activePath === primaryDashboardPath || (primaryDashboardPath === '/dashboard' && (activePath === '/' || activePath === '/dashboard'))}
+              isCollapsed={isCollapsed}
+              onClick={() => setIsMobileOpen && setIsMobileOpen(false)}
+            />
+          </div>
+
+          <div className="h-px bg-slate-100 dark:bg-slate-800 my-2 mx-1" />
           {groupedMenuItems.map((group) => (
             <CategoryDropdownGroup
               key={group.name}

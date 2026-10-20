@@ -1727,7 +1727,7 @@ const ClientDetailsPage = () => {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Send updated SLA agreement"
+                  placeholder="e.g. Send updated project proposal"
                   value={followUpForm.title}
                   onChange={e => setFollowUpForm(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"

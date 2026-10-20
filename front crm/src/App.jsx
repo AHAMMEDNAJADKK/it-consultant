@@ -82,8 +82,7 @@ import VisibleWorkPage from './pages/VisibleWorkPage';
 import ProjectReportsPage from './pages/ProjectReportsPage';
 import AgileSprintsPage from './pages/AgileSprintsPage';
 import GitIntegrationPage from './pages/GitIntegrationPage';
-import SupportTicketsPage from './pages/SupportTicketsPage';
-import SLAMaintenancePage from './pages/SLAMaintenancePage';
+import BugTrackingPage from './pages/BugTrackingPage';
 
 
 
@@ -283,11 +282,15 @@ function App() {
         <Route path="/projects/:id" element={<ProtectedRoute><MainLayout><RestrictedRoute><ProjectDetailsPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
         <Route path="/projects/:id/visible-work" element={<ProtectedRoute><MainLayout><RestrictedRoute><VisibleWorkPage /></RestrictedRoute></MainLayout></ProtectedRoute>} />
 
-        {/* Nexora IT Suite Core Engineering & Delivery Routes */}
+        {/* IT Services Core Engineering & Delivery Routes */}
         <Route path="/sprints" element={<ProtectedRoute><MainLayout><AgileSprintsPage /></MainLayout></ProtectedRoute>} />
         <Route path="/git-integrations" element={<ProtectedRoute><MainLayout><GitIntegrationPage /></MainLayout></ProtectedRoute>} />
-        <Route path="/support-tickets" element={<ProtectedRoute><MainLayout><SupportTicketsPage /></MainLayout></ProtectedRoute>} />
-        <Route path="/sla-maintenance" element={<ProtectedRoute><MainLayout><SLAMaintenancePage /></MainLayout></ProtectedRoute>} />
+        <Route path="/bugs" element={<ProtectedRoute><MainLayout><BugTrackingPage /></MainLayout></ProtectedRoute>} />
+        <Route path="/bug-tracking" element={<Navigate to="/bugs" replace />} />
+        {/* Safe redirects for deprecated modules */}
+        <Route path="/support-tickets" element={<Navigate to="/bugs" replace />} />
+        <Route path="/sla-maintenance" element={<Navigate to="/projects" replace />} />
+        <Route path="/sla-contracts" element={<Navigate to="/projects" replace />} />
 
         {/* Content Calendar Module Route */}
         <Route path="/calendar-work" element={<ProtectedRoute><MainLayout><CalendarWorkPage /></MainLayout></ProtectedRoute>} />

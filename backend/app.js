@@ -229,6 +229,8 @@ app.use('/api/v1/sprints', sprintRoutes);
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/v1/git', gitRoutes);
 app.use('/api/git', gitRoutes);
+app.use('/api/v1/bugs', supportTicketRoutes);
+app.use('/api/bugs', supportTicketRoutes);
 app.use('/api/v1/support-tickets', supportTicketRoutes);
 app.use('/api/support-tickets', supportTicketRoutes);
 app.use('/api/v1/sla-contracts', slaContractRoutes);

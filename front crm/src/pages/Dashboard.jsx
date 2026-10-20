@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  FolderKanban, CheckCircle2, Clock, AlertTriangle, ShieldCheck,
-  TrendingUp, Users, LifeBuoy, ArrowRight, DollarSign, Calendar,
-  Code2, GitBranch, RefreshCw, Sparkles, Plus, AlertCircle, ArrowUpRight,
-  Loader2, ShieldAlert, FileText, CheckCircle
+  FolderKanban, CheckCircle2, Clock, AlertTriangle,
+  TrendingUp, Users, ArrowRight, DollarSign, Calendar,
+  Code2, GitBranch, RefreshCw, Sparkles, Plus, AlertCircle,
+  Loader2, Bug, ListCheck, Building2, Wallet
 } from 'lucide-react';
 import { getDashboardMetrics } from '../services/dashboardService';
 import { useUser } from '../contexts/UserContext';
@@ -49,8 +49,6 @@ export default function Dashboard() {
   const tasks = data?.tasks || {};
   const finance = data?.finance || {};
   const support = data?.support || {};
-  const sla = data?.sla || {};
-  const leads = data?.leads || {};
   const milestones = data?.milestones || { upcoming: [], delayed: [] };
   const developerWorkload = data?.developerWorkload || [];
   const deliveryRisks = data?.deliveryRisks || [];
@@ -64,20 +62,20 @@ export default function Dashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div>
             <div className="flex items-center gap-2 text-indigo-400 text-xs font-bold uppercase tracking-wider mb-1">
-              <Sparkles size={14} /> IT Consultant — Executive & Delivery Dashboard
+              <Sparkles size={14} /> IT Services Command Center
             </div>
             <h1 className="text-2xl lg:text-3xl font-black tracking-tight">
               Welcome back, {user?.name || 'Engineer'}
             </h1>
             <p className="text-xs text-slate-300 mt-1 max-w-xl">
-              Real-time software delivery status, active sprints, client financial health, open support tickets, and SLA deadline alerts.
+              Real-time delivery progress across active client projects, developer task workload, milestones, and accounts receivables.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={loadMetrics}
-              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 border border-slate-700/60"
+              className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition text-xs font-bold flex items-center gap-1.5 border border-slate-700/60 cursor-pointer"
               title="Refresh real-time data"
             >
               <RefreshCw size={14} /> Refresh
@@ -98,12 +96,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 6 Top Metric Cards */}
+      {/* 6 Core Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
-        {/* Active Projects */}
+        {/* 1. Active Projects */}
         <Link to="/projects" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
           <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Projects</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">Active Projects</span>
             <FolderKanban size={18} />
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
@@ -115,25 +113,40 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        {/* Task Velocity */}
+        {/* 2. Tasks in Progress */}
         <Link to="/todo" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
           <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Dev Tasks</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">In Progress</span>
+            <Clock size={18} />
+          </div>
+          <p className="text-2xl font-black text-blue-600 dark:text-blue-400 mt-2">
+            {tasks.inProgress || 0}
+          </p>
+          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
+            <span>{tasks.pending || 0} Pending</span>
+            <span className="text-slate-400 font-medium">{tasks.total || 0} total</span>
+          </div>
+        </Link>
+
+        {/* 3. Tasks Completed */}
+        <Link to="/todo" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
+          <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Completed</span>
             <CheckCircle2 size={18} />
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
             {tasks.completed || 0}
           </p>
           <div className="flex items-center justify-between text-[11px] text-slate-400 mt-1">
-            <span>{tasks.total || 0} Total</span>
-            <span className="text-indigo-500 font-bold">{tasks.completionRate || 0}% Done</span>
+            <span>Completion Rate</span>
+            <span className="text-emerald-500 font-bold">{tasks.completionRate || 0}%</span>
           </div>
         </Link>
 
-        {/* Delivery Risks */}
+        {/* 4. Upcoming & Overdue Deadlines */}
         <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs">
           <div className="flex items-center justify-between text-rose-500">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Delivery Risks</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider">Deadlines</span>
             <AlertTriangle size={18} />
           </div>
           <p className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-2">
@@ -144,45 +157,31 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Outstanding Receivables */}
+        {/* 5. Outstanding Receivables */}
         <Link to="/accounts" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
           <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
             <span className="text-[11px] font-bold uppercase tracking-wider">Receivables</span>
             <DollarSign size={18} />
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2 truncate">
-            ${Math.round(finance.outstandingBalance || 0).toLocaleString()}
+            ₹{Math.round(finance.outstandingBalance || 0).toLocaleString()}
           </p>
           <div className="text-[11px] text-slate-400 mt-1">
-            <span>Collected: ${Math.round(finance.totalReceived || 0).toLocaleString()}</span>
+            <span>Collected: ₹{Math.round(finance.totalReceived || 0).toLocaleString()}</span>
           </div>
         </Link>
 
-        {/* Open Support Bugs */}
-        <Link to="/support-tickets" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
+        {/* 6. Active Bugs */}
+        <Link to="/bugs" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
           <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">Support Desk</span>
-            <LifeBuoy size={18} />
+            <span className="text-[11px] font-bold uppercase tracking-wider">Bug Tracking</span>
+            <Bug size={18} />
           </div>
           <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
             {support.open || 0}
           </p>
           <div className="text-[11px] text-rose-500 font-bold mt-1">
             <span>{support.critical || 0} Critical Bugs</span>
-          </div>
-        </Link>
-
-        {/* SLA Compliance */}
-        <Link to="/sla-maintenance" className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs hover:border-indigo-400 transition group">
-          <div className="flex items-center justify-between text-slate-400 group-hover:text-indigo-600">
-            <span className="text-[11px] font-bold uppercase tracking-wider">SLA Target</span>
-            <ShieldCheck size={18} />
-          </div>
-          <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
-            {sla.activeContracts ? '98.5%' : '100%'}
-          </p>
-          <div className="text-[11px] text-slate-400 mt-1">
-            <span>{sla.activeContracts || 0} Active SLAs</span>
           </div>
         </Link>
       </div>
@@ -196,7 +195,7 @@ export default function Dashboard() {
               <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
                 Active Projects & Delivery Progress
               </h2>
-              <p className="text-xs text-slate-400">Tracking milestones, tech stack, and manager deliverables</p>
+              <p className="text-xs text-slate-400">Tracking milestones, team assignments, and manager deliverables</p>
             </div>
             <Link to="/projects" className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 hover:underline">
               View All <ArrowRight size={13} />
@@ -318,7 +317,7 @@ export default function Dashboard() {
               </h2>
               <p className="text-xs text-slate-400">Active tasks and daily shift completion by software engineers</p>
             </div>
-            <Link to="/developer-dashboard" className="text-xs font-bold text-indigo-600 hover:underline">
+            <Link to="/developer-report" className="text-xs font-bold text-indigo-600 hover:underline">
               Dev Reports →
             </Link>
           </div>
@@ -394,26 +393,26 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Row 4: ERP Module Fast Access Grid */}
+      {/* Row 4: ERP Core Modules Quick Access Grid */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-4">
         <h2 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-          ERP Core Modules — Quick Access
+          IT Services ERP Modules — Quick Access
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
           {[
             { label: 'Client Leads', path: '/client-leads', icon: Users, color: 'text-blue-500' },
-            { label: 'Client Accounts', path: '/clients', icon: Users, color: 'text-indigo-500' },
+            { label: 'Client Accounts', path: '/clients', icon: Building2, color: 'text-indigo-500' },
             { label: 'Projects & Scope', path: '/projects', icon: FolderKanban, color: 'text-purple-500' },
-            { label: 'Tasks & Todo', path: '/todo', icon: CheckCircle2, color: 'text-emerald-500' },
+            { label: 'Tasks & Todo', path: '/todo', icon: ListCheck, color: 'text-emerald-500' },
+            { label: 'Sprint Board', path: '/sprints', icon: FolderKanban, color: 'text-rose-500' },
+            { label: 'Bug Tracking', path: '/bugs', icon: Bug, color: 'text-red-500' },
             { label: 'Developer Reports', path: '/developer-report', icon: Code2, color: 'text-cyan-500' },
             { label: 'AI Health Reports', path: '/ai-report', icon: Sparkles, color: 'text-amber-500' },
-            { label: 'Invoices & Finance', path: '/accounts', icon: DollarSign, color: 'text-green-500' },
-            { label: 'Agile Sprints', path: '/sprints', icon: FolderKanban, color: 'text-rose-500' },
+            { label: 'Invoices & Accounts', path: '/accounts', icon: Wallet, color: 'text-green-500' },
             { label: 'Git Integration', path: '/git-integrations', icon: GitBranch, color: 'text-slate-700 dark:text-slate-300' },
-            { label: 'Support Tickets', path: '/support-tickets', icon: LifeBuoy, color: 'text-red-500' },
-            { label: 'SLA Contracts', path: '/sla-maintenance', icon: ShieldCheck, color: 'text-teal-500' },
-            { label: 'Team & Users', path: '/users', icon: Users, color: 'text-orange-500' }
+            { label: 'Team & Users', path: '/users', icon: Users, color: 'text-orange-500' },
+            { label: 'Attendance', path: '/attendance', icon: Clock, color: 'text-teal-500' }
           ].map((item, idx) => {
             const Icon = item.icon;
             return (

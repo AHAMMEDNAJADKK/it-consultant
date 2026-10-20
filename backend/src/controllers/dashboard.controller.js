@@ -218,10 +218,15 @@ export const getERPDashboardMetrics = async (req, res, next) => {
     ]);
 
     // 9. SLA Contracts Overview
-    const [activeSLAContracts, expiringContracts] = await Promise.all([
-      SLAContract.countDocuments({ status: 'Active' }),
-      SLAContract.countDocuments({ status: 'Active', endDate: { $gte: now, $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } })
-    ]);
+    // Defensive SLA metrics (SLA UI removed, keeping safe non-blocking query for backend compatibility)
+    let activeSLAContracts = 0;
+    let expiringContracts = 0;
+    try {
+      [activeSLAContracts, expiringContracts] = await Promise.all([
+        SLAContract.countDocuments({ status: 'Active' }),
+        SLAContract.countDocuments({ status: 'Active', endDate: { $gte: now, $lte: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) } })
+      ]);
+    } catch (_) {}
 
     return res.status(200).json({
       success: true,

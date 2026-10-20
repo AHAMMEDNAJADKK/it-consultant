@@ -95,7 +95,7 @@ export default function GitIntegrationPage() {
       setSimulatingId(integrationId);
       const res = await simulateGitEvent(integrationId, {
         branch: 'main',
-        commitMessage: 'feat(api): optimize response times and update SLA handler #TASK-101',
+        commitMessage: 'feat(api): optimize response times and update webhook handler #TASK-101',
         authorName: 'Alex Mercer'
       });
       if (res?.success) {
